@@ -9,15 +9,28 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const token = localStorage.getItem('token');
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return navigate('/admin-login');
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role !== 'admin') {
+        return navigate('/admin-login');
+      }
+    } catch (err) {
+      return navigate('/admin-login');
+    }
+
     const fetchData = async () => {
       try {
         const usersRes = await axios.get('/api/admin/users', {
@@ -37,9 +50,10 @@ const AdminPanel = () => {
     };
 
     fetchData();
-  }, [token]); // ✅ FIXED dependency warning
+  }, []);
 
   const deleteUser = async (id) => {
+    const token = localStorage.getItem('token');
     try {
       await axios.delete(`/api/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -51,6 +65,7 @@ const AdminPanel = () => {
   };
 
   const deleteRecipe = async (id) => {
+    const token = localStorage.getItem('token');
     try {
       await axios.delete(`/api/admin/recipes/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -117,7 +132,12 @@ const AdminPanel = () => {
                 src={recipe.image || 'https://placehold.co/300x200?text=No+Image'}
                 alt={recipe.title}
                 width="100%"
-                style={{ borderRadius: '5px', marginTop: '10px' }}
+                style={{ 
+                  borderRadius: '5px', 
+                  marginTop: '10px',
+                  maxHeight: '200px', 
+                  objectFit: 'cover'
+                }}
               />
               <Typography sx={{ mt: 1 }}><strong>Author:</strong> {recipe.author || 'Anonymous'}</Typography>
               <Typography><strong>Ingredients:</strong> {recipe.ingredients}</Typography>

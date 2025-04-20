@@ -7,6 +7,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import RecipeDetail from './pages/RecipeDetail';
 import AdminPanel from './pages/AdminPanel';
+import AdminLogin from './pages/AdminLogin';
 import PrivateRoute from './components/PrivateRoutes';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route
           path="/dashboard"
           element={

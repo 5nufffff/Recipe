@@ -22,3 +22,17 @@ exports.login = (req, res) => {
     res.json({ token });
   });
 };
+
+exports.adminLogin = (req, res) => {
+  const { email, password } = req.body;
+
+  const ADMIN_EMAIL = 'admin@admin.com';
+  const ADMIN_PASSWORD = 'admin123'; // replace with env var or bcrypt if needed
+
+  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    const token = jwt.sign({ email, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    return res.json({ token });
+  }
+
+  return res.status(401).json({ message: 'Invalid admin credentials' });
+};

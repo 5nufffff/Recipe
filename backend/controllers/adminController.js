@@ -1,8 +1,16 @@
 const db = require('../config/db');
 
 exports.getUsers = (req, res) => {
-  db.query('SELECT id, name, email, role FROM users', (err, results) => {
-    if (err) return res.status(500).json({ error: 'Fetch users failed' });
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const userModel = require('../models/userModel');
+  userModel.getAllUsers((err, results) => {
+    if (err) {
+      console.error('Error fetching users:', err);
+      return res.status(500).json({ message: 'Error fetching users' });
+    }
     res.json(results);
   });
 };

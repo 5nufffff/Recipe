@@ -48,10 +48,31 @@ const RecipeDetail = () => {
     a.click();
   };
 
-  const handleCommentSubmit = () => {
-    if (newComment.trim()) {
-      setComments(prev => [...prev, newComment]);
-      setNewComment('');
+  const handleCommentSubmit = async () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('user_id');
+    const username = localStorage.getItem('username');
+
+    if (newComment.trim() && userId && token) {
+      try {
+        const res = await axios.post('/api/comments', {
+          recipe_id: id,
+          user_id: userId,
+          content: newComment
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const newCmt = res.data || {
+          content: newComment,
+          username: username || 'You'
+        };
+
+        setComments(prev => [...prev, newCmt]);
+        setNewComment('');
+      } catch (error) {
+        console.error('Failed to post comment:', error);
+      }
     }
   };
 
@@ -126,7 +147,9 @@ const RecipeDetail = () => {
           <Box>
             <Typography variant="h6" gutterBottom>Comments</Typography>
             {comments.map((cmt, index) => (
-              <Typography key={index} variant="body2" sx={{ mb: 1 }}>• {cmt}</Typography>
+              <Typography key={index} variant="body2" sx={{ mb: 1 }}>
+                • <strong>{cmt.username || 'User'}:</strong> {cmt.content || cmt}
+              </Typography>
             ))}
             <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
               <TextField
