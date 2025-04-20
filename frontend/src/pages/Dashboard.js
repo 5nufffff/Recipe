@@ -17,7 +17,14 @@ const RecipeDashboard = () => {
   const [allRecipes, setAllRecipes] = useState([]);
   const [openForm, setOpenForm] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState(null);
-  const [formData, setFormData] = useState({ title: '', ingredients: '', instructions: '', image: null });
+  const [formData, setFormData] = useState({
+    title: '',
+    ingredients: '',
+    instructions: '',
+    category: '',
+    image: null,
+    existingImage: ''
+  });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const placeholderImage = 'https://placehold.co/400x250?text=No+Image';
@@ -62,8 +69,17 @@ const RecipeDashboard = () => {
       title: recipe.title,
       ingredients: recipe.ingredients,
       instructions: recipe.instructions,
-      image: null
-    } : { title: '', ingredients: '', instructions: '', image: null });
+      category: recipe.category || '',
+      image: null,
+      existingImage: recipe.image || ''
+    } : {
+      title: '',
+      ingredients: '',
+      instructions: '',
+      category: '',
+      image: null,
+      existingImage: ''
+    });
     setOpenForm(true);
   };
 
@@ -83,23 +99,32 @@ const RecipeDashboard = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const data = {
-      title: formData.title,
-      ingredients: formData.ingredients,
-      instructions: formData.instructions,
-      image: '',
-      user_id: userId,
-    };
+    const formPayload = new FormData();
+    formPayload.append('title', formData.title);
+    formPayload.append('ingredients', formData.ingredients);
+    formPayload.append('instructions', formData.instructions);
+    formPayload.append('category', formData.category);
+
+    if (formData.image) {
+      formPayload.append('image', formData.image);
+    } else if (formData.existingImage) {
+      formPayload.append('image', formData.existingImage); // preserve existing image
+    }
+
     const token = localStorage.getItem('token');
     const config = {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
+      }
     };
+
     try {
       if (editingRecipe) {
-        await axios.put(`/api/recipes/${editingRecipe.id}`, data, config);
+        await axios.put(`/api/recipes/${editingRecipe.id}`, formPayload, config);
         showSnackbar('Recipe updated successfully!');
       } else {
-        await axios.post('/api/recipes', data, config);
+        await axios.post('/api/recipes', formPayload, config);
         showSnackbar('Recipe added successfully!');
       }
       fetchAllRecipes();
@@ -150,12 +175,16 @@ const RecipeDashboard = () => {
         <Grid container spacing={4} sx={{ mt: 2 }}>
           {(activeTab === 0 ? allRecipes : myRecipes).map((recipe) => (
             <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-              <Card onClick={() => navigate(`/recipe/${recipe.id}`)}
-              sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+              <Card onClick={() => navigate(`/recipe/${recipe.id}`)} sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
                 <CardMedia component="img" height="200" image={recipe.image || placeholderImage} alt={recipe.title} />
                 <CardContent>
                   <Typography variant="h6">{recipe.title}</Typography>
                   <Typography variant="body2" color="text.secondary"><strong>By:</strong> {recipe.author || recipe.authorName}</Typography>
+                  {recipe.category && (
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'gray' }}>
+                      {recipe.category}
+                    </Typography>
+                  )}
                   <Typography variant="body2"><strong>Ingredients:</strong> {recipe.ingredients}</Typography>
                   <Typography variant="body2"><strong>Instructions:</strong> {recipe.instructions}</Typography>
                 </CardContent>
@@ -177,13 +206,32 @@ const RecipeDashboard = () => {
         )}
       </Container>
 
-      {/* Recipe Form Dialog */}
       <Dialog open={openForm} onClose={handleFormClose}>
         <DialogTitle>{editingRecipe ? 'Edit Recipe' : 'Add New Recipe'}</DialogTitle>
         <DialogContent>
           <TextField fullWidth label="Title" name="title" value={formData.title} onChange={handleInputChange} margin="dense" required />
           <TextField fullWidth label="Ingredients" name="ingredients" value={formData.ingredients} onChange={handleInputChange} margin="dense" multiline rows={2} required />
           <TextField fullWidth label="Instructions" name="instructions" value={formData.instructions} onChange={handleInputChange} margin="dense" multiline rows={2} required />
+
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>Category</Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {['Veg', 'Non-Veg', 'Vegan'].map((option) => (
+                <label key={option}>
+                  <input
+                    type="radio"
+                    name="category"
+                    value={option}
+                    checked={formData.category === option}
+                    onChange={handleInputChange}
+                    style={{ marginRight: 6 }}
+                  />
+                  {option}
+                </label>
+              ))}
+            </Box>
+          </Box>
+
           <input type="file" name="image" accept="image/*" onChange={handleInputChange} style={{ marginTop: 10 }} />
         </DialogContent>
         <DialogActions>
@@ -192,7 +240,6 @@ const RecipeDashboard = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar Notifications */}
       <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}>
         <Alert onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}

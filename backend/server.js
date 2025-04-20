@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-
+app.use('/uploads', express.static('uploads'));
 app.use('/api', require('./routes/authRoutes'));
 app.use('/api/recipes', require('./routes/recipeRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
