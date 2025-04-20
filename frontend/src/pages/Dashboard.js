@@ -7,8 +7,10 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const RecipeDashboard = () => {
+  const navigate = useNavigate();
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -148,7 +150,8 @@ const RecipeDashboard = () => {
         <Grid container spacing={4} sx={{ mt: 2 }}>
           {(activeTab === 0 ? allRecipes : myRecipes).map((recipe) => (
             <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Card onClick={() => navigate(`/recipe/${recipe.id}`)}
+              sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
                 <CardMedia component="img" height="200" image={recipe.image || placeholderImage} alt={recipe.title} />
                 <CardContent>
                   <Typography variant="h6">{recipe.title}</Typography>
@@ -158,8 +161,8 @@ const RecipeDashboard = () => {
                 </CardContent>
                 {activeTab === 1 && (
                   <CardActions sx={{ justifyContent: 'flex-end' }}>
-                    <Button size="small" onClick={() => handleFormOpen(recipe)}>Edit</Button>
-                    <Button size="small" color="error" onClick={() => handleDelete(recipe.id)}>Delete</Button>
+                    <Button size="small" onClick={(e) => { e.stopPropagation(); handleFormOpen(recipe); }}>Edit</Button>
+                    <Button size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(recipe.id); }}>Delete</Button>
                   </CardActions>
                 )}
               </Card>
