@@ -1,4 +1,4 @@
-const db = require('../config/db'); // your db connection file
+const db = require('../config/db');
 
 const addComment = (recipe_id, user_id, content) => {
   return new Promise((resolve, reject) => {
@@ -8,7 +8,6 @@ const addComment = (recipe_id, user_id, content) => {
     `;
     db.query(query, [recipe_id, user_id, content], (err, result) => {
       if (err) return reject(err);
-      // Get the username for response
       const selectQuery = `
         SELECT c.id, c.content, u.name AS username 
         FROM comments c 
@@ -23,4 +22,29 @@ const addComment = (recipe_id, user_id, content) => {
   });
 };
 
-module.exports = { addComment };
+const getCommentsByRecipe = (recipe_id) => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT c.id, c.content, u.name AS username 
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.recipe_id = ?
+      ORDER BY c.created_at ASC
+    `;
+    db.query(query, [recipe_id], (err, rows) => {
+      if (err) return reject(err);
+      resolve(rows);
+    });
+  });
+};
+
+const deleteComment = (id) => {
+  return new Promise((resolve, reject) => {
+    db.query('DELETE FROM comments WHERE id = ?', [id], (err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+};
+
+module.exports = { addComment, getCommentsByRecipe, deleteComment };
